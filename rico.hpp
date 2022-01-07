@@ -7,7 +7,33 @@
  * closely ressemble the ConsoleGameEngine, without the console part
  * RICO stands for Rico Is Clearly OlcConsoleGameEngine
  *
- * Compiling in Linux
+ * Usage
+ * ~~~~~
+ * rico.hpp provides a simple framework to create retro-looking applications.
+ *
+ * The user must create a class inheriting from Game and override the
+ * following functions:
+ * OnUserCreate: called once, for initialization
+ * OnUserUpdate: called each frame
+ * OnUserDestroy: called once, for cleanup
+ *
+ * Game contains several protected functions (Width, Height, SetPixel,
+ * GetMousePos, GetButton, WaitMs, Clear), along with basic types (Color,
+ * Button, HardwareButton) to work with (see documentation below).
+ * Feel free to use them to unleash your creativity!
+ * To further help the user, the containers vec2D and mat2D are defined.
+ * An external random number generator is also available (see random.hpp).
+ *
+ * GameEngine is a singleton and a wrapper around SDL elements
+ * protected functions of Game are shortcuts for GameEngine static functions
+ * GameEngine::Construct allow the user to create a window
+ * GameEngine::Run<app> run the application (inheriting from Game)
+ *
+ * see examples:
+ * rico/demo.cpp = repeatedly change pixels color at random
+ * rico/life.cpp = Conway's Game Of Life
+ *
+ * Compiling on Linux
  * ~~~~~~~~~~~~~~~~~~
  * You will obviously need to install the SDL2 library
  * solution 1: debian package 'libsdl2-dev'
@@ -15,6 +41,10 @@
  *
  * Then use the command:
  * g++ -std=c++17 -o YourProgName YourSource.cpp -lSDL2
+ *
+ * Compiling on Windows
+ * ~~~~~~~~~~~~~~~~~~~~
+ * You're on your own
  */
 
 #pragma once
