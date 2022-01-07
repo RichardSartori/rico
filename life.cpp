@@ -21,12 +21,11 @@ private:
 	mat current, next;
 	static constexpr uint32_t FPS = 30;
 
-	// access the position in the matrix, with wrap around
-	bool& get(mat& m, vec v) {
-		uint32_t width = Width(), height = Height();
-		uint32_t x = (v.x + width) % width;
-		uint32_t y = (v.y + height) % height;
-		return m[x][y];
+	// return the position in the matrix with wrap around
+	vec wrap(vec v) {
+		int32_t x = (v.x + Width()) % Width();
+		int32_t y = (v.y + Height()) % Height();
+		return vec(x, y);
 	}
 
 	// create glider centered around position p
@@ -35,8 +34,8 @@ private:
 			{+0, -1}, {+1, +0}, {-1, +1}, {+0, +1}, {+1, +1}
 		};
 		for (uint32_t i = 0; i < 5; ++i) {
-			get(current, p + offsets[i]) = true;
-			SetPixel(p + offsets[i], ALIVE);
+			current[wrap(p + offsets[i])] = true;
+			SetPixel(wrap(p + offsets[i]), ALIVE);
 		}
 	}
 
@@ -52,10 +51,10 @@ private:
 				vec pos(x , y);
 				int sum = 0;
 				for (int i = 0; i < 8; ++i) {
-					if (get(current, pos + offsets[i])) ++sum;
+					if (current[wrap(pos + offsets[i])]) ++sum;
 				}
-				bool& src = get(current, pos);
-				bool& dst = get(next, pos);
+				bool& src = current[pos];
+				bool& dst = next[pos];
 				if (sum <= 1) { dst = false; SetPixel(pos, DEAD); }
 				if (sum == 2) { dst = src; /* pixel keep color */ }
 				if (sum == 3) { dst = true; SetPixel(pos, ALIVE); }
@@ -68,8 +67,8 @@ protected:
 
 	bool OnUserCreate(int argc, char const **argv) override {
 		pause = step = false;
-		current = mat(Width(), Height());
-		next = mat(Width(), Height());
+		current = mat(Height(), Width());
+		next = mat(Height(), Width());
 		double ratio = 0.5;
 		if (argc >= 2) {
 			ratio = std::strtod(argv[1], NULL);
@@ -78,7 +77,7 @@ protected:
 		for (uint32_t y = 0; y < Height(); ++y) {
 			for (uint32_t x = 0; x < Width(); ++x) {
 				vec pos(x, y);
-				bool& cell = get(current, pos);
+				bool& cell = current[pos];
 				cell = Random::randd() < ratio;
 				if (cell) {
 					SetPixel(pos, ALIVE);
@@ -113,7 +112,7 @@ protected:
 		if (GetButton('s').pressed && pause) step = true;
 		if (GetButton(rico::Button::LEFT).pressed) {
 			if (GetMousePos(&pos)) {
-				bool& cell = get(current, pos);
+				bool& cell = current[pos];
 				cell = !cell;
 				if (cell) {
 					SetPixel(pos, ALIVE);

@@ -1,4 +1,4 @@
-CPPFLAGS = -Wall -Wextra -Werror -fmax-errors=1 -g -O0
+CPPFLAGS = -Wall -Wextra -Werror -fmax-errors=1
 
 default:
 	@echo "usage: make [demo|life]"
