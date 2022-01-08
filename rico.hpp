@@ -382,7 +382,7 @@ namespace rico {
 				engine.texture_width = window_width / pixel_size;
 				engine.texture_height = window_height / pixel_size;
 
-				int retval = SDL_Init(SDL_INIT_VIDEO);
+				int retval = SDL_Init(SDL_INIT_EVENTS);
 				if (retval != 0) throw std::runtime_error("SDL_Init");
 
 				engine.window = SDL_CreateWindow(

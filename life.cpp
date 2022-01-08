@@ -96,7 +96,7 @@ protected:
 	bool OnUserUpdate(uint32_t elapsed_ms) override {
 		(void) elapsed_ms;
 		if (!pause || step) {
-			// update next state based on current state, set changing pixels
+			// update next state based on current state
 			update();
 			// swap buffers for the next update
 			mat tmp(std::move(current));
