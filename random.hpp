@@ -1,37 +1,26 @@
 /** rico/random.hpp
  *
- * DO NOT USE FOR CRYPTOGRAPHY
+ * /!\ DO NOT USE FOR CRYPTOGRAPHY /!\
  *
- * This RNG is a linear congruential generator with uniform distribution
- * modulus, multiplier and increment are carefully chosen to give a period
- * of 2**31 for any seed (except for the following case)
+ * This RNG use a linear congruential generator
+ * modulus    m = 2^64
+ * multiplier a = m / 3
+ * increment  c = 1
+ * this ensure a period of 2^64 for the state, regardless of the seed
+ * low bits have a shorter period, so it only output the 32 highest bits
  *
- * Calling Random::rand_r() repeatedly on a range of size N will shorten
- * the period to N if N is a power of 2
- *
- * Random::MAX is INT32_MAX, so the results of rand can safely be
- * casted to int32_t (aka int)
- *
- * std::time_t may not be meaningfully converted to uint32_t, but it is
+ * std::time_t may not be meaningfully converted to uint64_t, but it is
  * garanteed that type punning can be done on it to initialize the seed
  * with its content
  *
- * <something> &= 0x7fffffff;
- * is a more efficient way to do
- * <something> %= 0x80000000;
- *
- * Any call to Random::rand, Random::rand_r, Random::randd or Random::randd_r
- * is based on the result of a call to Random::update
- *
- * Keeping the uniform distribution of Random::rand
- * when calling Random::rand_r is not easy
- * Random::rand() % range_size does not keep it
+ * Keeping the uniform distribution when calling Random::rangeUint
+ * is not easy. 'Random::Uint() % range_size' does not keep it
+ * (pigeonhole principle, some outputs have higher probability)
  *
  * sources :
- * LCG = wikipedia - Linear congruential generator
- * rand_r distribution = stackexchange - 1242163
- * hex value = youtube one lone coder - procedural universe
- * class structure = youtube the cherno - singleton
+ * LCG = wikipedia - linear congruential generator
+ * rangeUint distribution = stackexchange - 1242163
+ * class structure = youtube "The Cherno" - singleton
  */
 
 #pragma once
@@ -42,118 +31,98 @@
 class Random {
 public:
 
-	// seed the RNG with <s>
-	// if not called, the RNG is seeded using std::time
-	static void seed(uint32_t s)
-	{
-		s &= 0x7fffffff;
+	static void Seed(uint64_t s) {
 		get().state = s;
 	}
 
-	// return a random number in the range [0, Random::MAX]
-	static uint32_t rand(void)
-	{
-		return get().update();
+	/* range [ 0 , 2^32-1 ] */
+	static uint32_t Uint(void) {
+		uint64_t retval = get().update();
+		retval >>= 32;
+		return static_cast<uint32_t>(retval);
 	}
 
-	// return a random number in the range [lower_bound, upper_bound]
-	static uint32_t rand_r(uint32_t lb, uint32_t ub)
-	{
-		if (ub < lb)
-		{
-			throw std::domain_error("empty range");
-		}
-		uint32_t range_size = ub - lb + 1;
-		if (range_size > _max_range_size || range_size == 0)
-		// /!\ if lb = INT_MIN and ub = INT_MAX then range_size = 0
-		{
-			throw std::domain_error("range too wide");
-		}
-		else
-		{
-			uint32_t max_divisible_range = _max_range_size;
-			max_divisible_range /= range_size;
-			max_divisible_range *= range_size;
-			while (true)
-			{
-				uint32_t x = rand();
-				if (x < max_divisible_range)
-				{
-					return lb + x % range_size;
-				}
-			}
-		}
+	/* range [ 0 , 2^31-1 ] */
+	static int32_t Int(void) {
+		return Uint() >> 1;
 	}
 
-	// overload of Random::rand_r for int32_t
-	static int32_t rand_r(int32_t lb, int32_t ub)
-	{
-		if (ub < lb)
-		{
-			throw std::domain_error("empty range");
+	/* range [ min, max ] */
+	static uint32_t rangeUint(uint32_t min, uint32_t max) {
+		if (max < min) throw std::domain_error("empty range");
+		uint64_t range_size = static_cast<uint64_t>(max) - min + 1;
+		if (range_size == 1) return min;
+		// find a range
+		// - as large as possible so that the following process is fast
+		// - divisible by range_size so that the % operation is safe
+		uint64_t max_divisible_range = 1 + static_cast<uint64_t>(MAX);
+		max_divisible_range /= range_size;
+		max_divisible_range *= range_size;
+		// wait for the random process to fall in this range
+		uint32_t x;
+		while (true) {
+			x = Uint();
+			if (x < max_divisible_range) break;
 		}
-		uint32_t u_lb = static_cast<uint32_t>(0);
-		uint32_t u_ub = static_cast<uint32_t>(ub - lb);
-		uint32_t u_retval = rand_r(u_lb, u_ub);
-		int32_t retval = static_cast<int32_t>(u_retval);
-		return retval + lb;
+		return min + x % range_size;
 	}
 
-	// return a random double in the range [0, 1)
-	static double randd(void)
-	{
-		return static_cast<double>(rand()) / _max_range_size;
+	/* range [ 0, max ] */
+	static uint32_t rangeUint(uint32_t max) {
+		return rangeUint(0, max) ;
 	}
 
-	// return a random double in the range [lower_bound, upper_bound)
-	static double randd_r(double lb, double ub)
-	{
-		if (ub <= lb)
-		{
-			throw std::domain_error("empty range");
-		}
-		else
-		{
-			return lb + Random::randd() * (ub - lb);
-		}
+	/* range [ min, max ] */
+	static int32_t rangeInt(int32_t min, int32_t max) {
+		if (max < min) throw std::domain_error("empty range");
+		// ok even if max-min overflow on int32_t
+		uint32_t umax = static_cast<uint32_t>(max - min);
+		uint32_t uretval = rangeUint(umax);
+		int32_t retval = static_cast<int32_t>(uretval);
+		return min + retval;
 	}
 
-	// maximum return value of Random::rand
-	static constexpr uint32_t MAX = 0x7fffffff; // 2**31-1
+	/* range [ 0.0 , 1.0 ) */
+	static double Double(void) {
+		return static_cast<double>(Uint()) / MAX;
+	}
+
+	/* range [ min , max ) */
+	static double rangeDouble(double min, double max) {
+		if (max <= min) throw std::domain_error("empty range");
+		return min + Double() * (max - min);
+	}
 
 private:
-	// store the state of the RNG
-	uint32_t state;
-	// maximum size of the range in Random::randd_r
-	static constexpr uint32_t _max_range_size = 0x80000000; // 2**31
 
-	// Constructor of the singleton, seeded with std::time
+	uint64_t state;
+	static constexpr uint32_t MAX = static_cast<uint32_t>(0xffffffff); // 2^32-1
+
+	/**
+	 * private constructor of the singleton
+	 * seeded by hashing (FNV-1) the return of std::time
+	 */
 	Random(void)
-		: state(0)
+		: state(static_cast<uint64_t>(0xcbf29ce484222325))
 	{
 		std::time_t now = std::time(nullptr);
-		char *char_now = reinterpret_cast<char *>(&now);
-		for (size_t i = 0; i < sizeof(now); ++i)
-		{
-			state += 0xe120fc15 * char_now[i];
+		unsigned char *char_now = reinterpret_cast<unsigned char *>(&now);
+		while (*char_now) {
+			state *= static_cast<uint64_t>(0x100000001b3);
+			state ^= static_cast<uint64_t>(*char_now++);
 		}
-		state &= 0x7fffffff;
 	}
 
-	// return the instance of the singleton
-	static Random& get(void)
-	{
+	/* return the instance of the singleton */
+	static Random& get(void) {
 		static Random instance;
 		return instance;
 	}
 
-	// modify the state of the RNG and return the result
-	uint32_t update(void)
-	{
-		state *= 0xe120fc15; // multiplier
-		state += 0x00000001; // increment
-	//	state %= 0x80000000; // modulus
-		state &= 0x7fffffff;
+	/* modify the state of the RNG and return it */
+	uint64_t update(void) {
+		state *= static_cast<uint64_t>(0x5555555555555555);
+		++state;
 		return state;
 	}
 

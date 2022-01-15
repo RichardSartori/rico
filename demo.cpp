@@ -19,8 +19,7 @@ protected:
 		for (uint32_t i = 0; i < Width(); ++i) {
 			for (uint32_t j = 0; j < Height(); ++j) {
 				rico::vec2D pos(i, j);
-				// do not use the range [0, 255] with this RNG (see random.hpp)
-				rico::Color color(Random::rand_r(1, 254), Random::rand_r(1, 254), Random::rand_r(1, 254));
+				rico::Color color(Random::rangeUint(0, 255), Random::rangeUint(0, 255), Random::rangeUint(0, 255));
 				SetPixel(pos, color);
 			}
 		}

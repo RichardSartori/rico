@@ -78,7 +78,7 @@ protected:
 			for (uint32_t x = 0; x < Width(); ++x) {
 				vec pos(x, y);
 				bool& cell = current[pos];
-				cell = Random::randd() < ratio;
+				cell = Random::Double() < ratio;
 				if (cell) {
 					SetPixel(pos, ALIVE);
 				} else {
