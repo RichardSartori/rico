@@ -104,7 +104,7 @@ namespace rico {
 
 	public:
 
-		mat2D(void)
+		mat2D(void) noexcept
 			: rows(0), cols(0), data(nullptr)
 		{}
 
@@ -135,8 +135,8 @@ namespace rico {
 			return *this;
 		}
 
-		mat2D(mat2D&& other) noexcept :
-			rows(other.rows), cols(other.cols), data(other.data)
+		mat2D(mat2D&& other) noexcept
+			: rows(other.rows), cols(other.cols), data(other.data)
 		{
 			new (&other) mat2D();
 		}
