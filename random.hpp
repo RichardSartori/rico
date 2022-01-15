@@ -100,15 +100,15 @@ private:
 
 	/**
 	 * private constructor of the singleton
-	 * seeded by hashing (FNV-1) the return of std::time
+	 * seeded by hashing (FNV-1 64 bits) the return of std::time
 	 */
 	Random(void)
-		: state(static_cast<uint64_t>(0xcbf29ce484222325))
+		: state(static_cast<uint64_t>(0xcbf29ce484222325)) // FNV-1 init
 	{
 		std::time_t now = std::time(nullptr);
 		unsigned char *char_now = reinterpret_cast<unsigned char *>(&now);
 		while (*char_now) {
-			state *= static_cast<uint64_t>(0x100000001b3);
+			state *= static_cast<uint64_t>(0x100000001b3); // FNV-1 multiplier
 			state ^= static_cast<uint64_t>(*char_now++);
 		}
 	}
@@ -121,7 +121,7 @@ private:
 
 	/* modify the state of the RNG and return it */
 	uint64_t update(void) {
-		state *= static_cast<uint64_t>(0x5555555555555555);
+		state *= static_cast<uint64_t>(0x5555555555555555); // 2^64 / 3
 		++state;
 		return state;
 	}
