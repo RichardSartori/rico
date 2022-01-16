@@ -21,7 +21,7 @@
  * GetMousePos, GetButton, WaitMs, Clear), along with basic types (Color,
  * Button, HardwareButton) to work with (see documentation below).
  * Feel free to use them to unleash your creativity!
- * To further help the user, the containers vec2D and mat2D are defined.
+ * To further help the user, the containers Tvec2D and Tmat2D are defined.
  * An external random number generator is also available (see random.hpp).
  *
  * GameEngine is a singleton and a wrapper around SDL elements
@@ -60,25 +60,37 @@
 namespace rico {
 
 	/**
-	 * 2-component vector, to hold coordinates
-	 * supports addition and comparison
+	 * template for 2-component vector
 	 */
-	struct vec2D {
-		int32_t x, y;
-		vec2D(int32_t _x, int32_t _y) : x(_x), y(_y) {}
-		vec2D(void) : vec2D(0, 0) {}
-		vec2D(vec2D const&) = default;
-		vec2D& operator=(vec2D const&) = default;
-		vec2D& operator+=(vec2D const& rhs) { this->x += rhs.x; this->y += rhs.y; return *this; }
-		vec2D operator+(vec2D const& rhs) const { vec2D copy(*this); copy += rhs; return copy; }
-		bool operator==(vec2D const& rhs) const { return this->x == rhs.x && this->y == rhs.y; }
-	}; // struct vec2D
+	template<typename T>
+	struct Tvec2D {
+		T x, y;
+		Tvec2D(T _x, T _y) : x(_x), y(_y) {}
+		Tvec2D(void) : Tvec2D(0, 0) {}
+		Tvec2D(Tvec2D const&) = default;
+		Tvec2D& operator=(Tvec2D const&) = default;
+		Tvec2D& operator+=(Tvec2D const& rhs) { this->x += rhs.x; this->y += rhs.y; return *this; }
+		Tvec2D& operator-=(Tvec2D const& rhs) { this->x -= rhs.x; this->y -= rhs.y; return *this; }
+		Tvec2D& operator*=(T      const& rhs) { this->x *= rhs  ; this->y *= rhs  ; return *this; }
+		Tvec2D& operator/=(T      const& rhs) { this->x /= rhs  ; this->y /= rhs  ; return *this; }
+		Tvec2D  operator+ (Tvec2D const& rhs) const { Tvec2D copy(*this); copy += rhs; return copy; }
+		Tvec2D  operator- (Tvec2D const& rhs) const { Tvec2D copy(*this); copy -= rhs; return copy; }
+		Tvec2D  operator* (T      const& rhs) const { Tvec2D copy(*this); copy *= rhs; return copy; }
+		Tvec2D  operator/ (T      const& rhs) const { Tvec2D copy(*this); copy /= rhs; return copy; }
+		bool operator==(Tvec2D const& rhs) const { return this->x == rhs.x && this->y == rhs.y; }
+		bool operator!=(Tvec2D const& rhs) const { return !(*this == rhs); }
+	}; // struct Tvec2D
+
+	/**
+	 * to hold coordinates
+	 */
+	using position = Tvec2D<uint32_t>;
 
 	/**
 	 * template for 2D matrix
 	 */
 	template<typename T>
-	class mat2D {
+	class Tmat2D {
 	private:
 
 		uint32_t rows, cols; // dimensions
@@ -100,49 +112,49 @@ namespace rico {
 				return data[index];
 			}
 
-		}; // struct mat2D::Row
+		}; // struct Tmat2D::Row
 
 	public:
 
-		mat2D(void) noexcept
+		Tmat2D(void) noexcept
 			: rows(0), cols(0), data(nullptr)
 		{}
 
-		mat2D(uint32_t _rows, uint32_t _cols)
+		Tmat2D(uint32_t _rows, uint32_t _cols)
 			: rows(_rows), cols(_cols)
 		{
 			data = static_cast<T*>(std::malloc(rows * cols * sizeof(T)));
 			if (data == NULL) throw std::runtime_error("malloc returned NULL");
 		}
 
-		~mat2D(void) noexcept {
+		~Tmat2D(void) noexcept {
 			std::free(data);
 		}
 
-		mat2D(mat2D const& other)
-			: mat2D(other.rows, other.cols)
+		Tmat2D(Tmat2D const& other)
+			: Tmat2D(other.rows, other.cols)
 		{
 			for (uint32_t i = 0; i < rows * cols; ++i) {
 				data[i] = other.data[i];
 			}
 		}
 
-		mat2D& operator=(mat2D const& other) {
+		Tmat2D& operator=(Tmat2D const& other) {
 			if (this != &other) {
-				this->~mat2D();
-				new (this) mat2D(other);
+				this->~Tmat2D();
+				new (this) Tmat2D(other);
 			}
 			return *this;
 		}
 
-		mat2D(mat2D&& other) noexcept
+		Tmat2D(Tmat2D&& other) noexcept
 			: rows(other.rows), cols(other.cols), data(other.data)
 		{
-			new (&other) mat2D();
+			new (&other) Tmat2D();
 		}
 
-		mat2D& operator=(mat2D&& other) noexcept {
-			new (this) mat2D(std::move(other));
+		Tmat2D& operator=(Tmat2D&& other) noexcept {
+			new (this) Tmat2D(std::move(other));
 			return *this;
 		}
 
@@ -155,15 +167,11 @@ namespace rico {
 			return Row(data + cols * index, cols);
 		}
 
-		T& operator[](vec2D pos) { // to allow the syntax 'matrix[vec2D(i, j)]'
-			if (pos.x < 0 || pos.y < 0) throw std::out_of_range("negative index");
-			uint32_t x = static_cast<uint32_t>(pos.x);
-			uint32_t y = static_cast<uint32_t>(pos.y);
-			// in a (x, y) position, x refer to the column and y to the row
-			return (*this)[y][x];
+		T& operator[](position pos) { // to allow the syntax 'matrix[position(i, j)]'
+			return (*this)[pos.y][pos.x]; // in a (x, y) position, x refer to the column and y to the row
 		}
 
-	}; // class mat2D
+	}; // class Tmat2D
 
 	/**
 	 * classic RGB color
@@ -308,7 +316,7 @@ namespace rico {
 		SDL_Renderer *renderer;
 		SDL_Texture *texture;
 		// raw pixel data for the texture
-		mat2D<uint32_t> data;
+		Tmat2D<uint32_t> data;
 		// devices state
 		HardwareButton mouse_state[Button::index_count];
 		HardwareButton keyboard_state[Button::key_count];
@@ -406,7 +414,7 @@ namespace rico {
 				if (engine.texture == NULL) throw std::runtime_error("SDL_CreateTexture");
 
 				// height is the number of rows and width is the number of cols
-				engine.data = mat2D<uint32_t>(engine.texture_height, engine.texture_width);
+				engine.data = Tmat2D<uint32_t>(engine.texture_height, engine.texture_width);
 
 			} catch (std::exception const& e) {
 				PrintException(e);
@@ -455,7 +463,7 @@ namespace rico {
 		 * @param pos position of the pixel
 		 * @param color color of the pixel
 		 */
-		static void SetPixel(vec2D pos, Color color) {
+		static void SetPixel(position pos, Color color) {
 			GameEngine& engine = Get();
 			if (engine.init) {
 				engine.data[pos] = uint32_t(color);
@@ -467,7 +475,7 @@ namespace rico {
 		 * @param[out] output if not NULL, position of the pixel under mouse
 		 * @return true if the mouse is above the window, false otherwise
 		 */
-		static bool GetMousePos(vec2D *output) {
+		static bool GetMousePos(position *output) {
 			GameEngine& engine = Get();
 			if (!engine.init) return false;
 			int32_t window_x, window_y;
@@ -557,8 +565,8 @@ namespace rico {
 		// useful shortcuts for the user, see GameEngine for documentation
 		uint32_t Width(void) const { return GameEngine::GetWidth(); }
 		uint32_t Height(void) const { return GameEngine::GetHeight(); }
-		void SetPixel(vec2D pos, Color value) const { GameEngine::SetPixel(pos, value); }
-		bool GetMousePos(vec2D *output) const { return GameEngine::GetMousePos(output); }
+		void SetPixel(position pos, Color value) const { GameEngine::SetPixel(pos, value); }
+		bool GetMousePos(position *output) const { return GameEngine::GetMousePos(output); }
 		HardwareButton GetButton(Button button) const { return GameEngine::GetButton(button); }
 		void WaitMs(uint32_t ms) const { GameEngine::WaitMs(ms); }
 
@@ -569,7 +577,7 @@ namespace rico {
 		void Clear(Color color) const {
 			for (uint32_t col = 0; col < Height(); ++col) {
 				for (uint32_t row = 0; row < Width(); ++row) {
-					SetPixel(vec2D(row, col), color);
+					SetPixel(position(row, col), color);
 				}
 			}
 		}

@@ -15,27 +15,28 @@
 class GameOfLife : public rico::Game {
 private:
 
-	using vec = rico::vec2D;
-	using mat = rico::mat2D<bool>;
+	using vec = rico::Tvec2D<int32_t>;
+	using mat = rico::Tmat2D<bool>;
 	bool pause, step;
 	mat current, next;
 	static constexpr uint32_t FPS = 30;
 
 	// return the position in the matrix with wrap around
-	vec wrap(vec v) {
-		int32_t x = (v.x + Width()) % Width();
-		int32_t y = (v.y + Height()) % Height();
-		return vec(x, y);
+	rico::position wrap(vec v) {
+		uint32_t x = static_cast<uint32_t>(v.x + Width()) % Width();
+		uint32_t y = static_cast<uint32_t>(v.y + Height()) % Height();
+		return rico::position(x, y);
 	}
 
 	// create glider centered around position p
-	void glider(vec p) {
+	void glider(rico::position p) {
+		vec v(p.x, p.y);
 		vec const offsets[5] = {
 			{+0, -1}, {+1, +0}, {-1, +1}, {+0, +1}, {+1, +1}
 		};
 		for (uint32_t i = 0; i < 5; ++i) {
-			current[wrap(p + offsets[i])] = true;
-			SetPixel(wrap(p + offsets[i]), ALIVE);
+			current[wrap(v + offsets[i])] = true;
+			SetPixel(wrap(v + offsets[i]), ALIVE);
 		}
 	}
 
@@ -49,16 +50,16 @@ private:
 		for (uint32_t x = 0; x < Width(); ++x) {
 			for (uint32_t y = 0; y < Height(); ++y) {
 				vec pos(x , y);
-				int sum = 0;
-				for (int i = 0; i < 8; ++i) {
+				int32_t sum = 0;
+				for (int32_t i = 0; i < 8; ++i) {
 					if (current[wrap(pos + offsets[i])]) ++sum;
 				}
-				bool& src = current[pos];
-				bool& dst = next[pos];
-				if (sum <= 1) { dst = false; SetPixel(pos, DEAD); }
+				bool& src = current[wrap(pos)];
+				bool& dst = next[wrap(pos)];
+				if (sum <= 1) { dst = false; SetPixel(wrap(pos), DEAD); }
 				if (sum == 2) { dst = src; /* pixel keep color */ }
-				if (sum == 3) { dst = true; SetPixel(pos, ALIVE); }
-				if (sum >= 4) { dst = false; SetPixel(pos, DEAD); }
+				if (sum == 3) { dst = true; SetPixel(wrap(pos), ALIVE); }
+				if (sum >= 4) { dst = false; SetPixel(wrap(pos), DEAD); }
 			}
 		}
 	}
@@ -76,7 +77,7 @@ protected:
 		}
 		for (uint32_t y = 0; y < Height(); ++y) {
 			for (uint32_t x = 0; x < Width(); ++x) {
-				vec pos(x, y);
+				rico::position pos(x, y);
 				bool& cell = current[pos];
 				cell = Random::Double() < ratio;
 				if (cell) {
@@ -106,7 +107,7 @@ protected:
 			step = false;
 		}
 		// handle user inputs
-		vec pos;
+		rico::position pos;
 		if (GetButton('q').pressed) return false;
 		if (GetButton('p').pressed) pause = !pause;
 		if (GetButton('s').pressed && pause) step = true;
