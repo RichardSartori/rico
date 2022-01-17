@@ -117,7 +117,7 @@ namespace rico {
 	public:
 
 		Tmat2D(void) noexcept
-			: rows(0), cols(0), data(nullptr)
+			: rows(0), cols(0), data(NULL)
 		{}
 
 		Tmat2D(uint32_t _rows, uint32_t _cols)
@@ -180,7 +180,7 @@ namespace rico {
 
 		uint8_t r, g, b; // color components
 
-		Color(uint8_t _r, uint8_t _g, uint8_t _b)
+		constexpr Color(uint8_t _r, uint8_t _g, uint8_t _b)
 			: r(_r), g(_g), b(_b)
 		{}
 
@@ -202,7 +202,7 @@ namespace rico {
 	/**
 	 * a few colors
 	 */
-	static const Color
+	static constexpr Color
 		BLACK   (  0,   0,   0),
 		RED     (255,   0,   0),
 		YELLOW  (255, 255,   0),
