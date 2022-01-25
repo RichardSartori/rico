@@ -22,14 +22,14 @@ private:
 	static constexpr uint32_t FPS = 30;
 
 	// return the position in the matrix with wrap around
-	rico::position wrap(vec v) {
+	rico::Position wrap(vec v) {
 		uint32_t x = static_cast<uint32_t>(v.x + Width()) % Width();
 		uint32_t y = static_cast<uint32_t>(v.y + Height()) % Height();
-		return rico::position(x, y);
+		return rico::Position(x, y);
 	}
 
 	// create glider centered around position p
-	void glider(rico::position p) {
+	void glider(rico::Position p) {
 		vec v(p.x, p.y);
 		vec const offsets[5] = {
 			{+0, -1}, {+1, +0}, {-1, +1}, {+0, +1}, {+1, +1}
@@ -77,7 +77,7 @@ protected:
 		}
 		for (uint32_t y = 0; y < Height(); ++y) {
 			for (uint32_t x = 0; x < Width(); ++x) {
-				rico::position pos(x, y);
+				rico::Position pos(x, y);
 				bool& cell = current[pos];
 				cell = Random::Double() < ratio;
 				if (cell) {
@@ -107,7 +107,7 @@ protected:
 			step = false;
 		}
 		// handle user inputs
-		rico::position pos;
+		rico::Position pos;
 		if (GetButton('q').pressed) return false;
 		if (GetButton('p').pressed) pause = !pause;
 		if (GetButton('s').pressed && pause) step = true;

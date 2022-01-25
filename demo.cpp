@@ -18,7 +18,7 @@ protected:
 	bool OnUserUpdate(uint32_t elapsed_ms) override {
 		for (uint32_t i = 0; i < Width(); ++i) {
 			for (uint32_t j = 0; j < Height(); ++j) {
-				rico::position pos(i, j);
+				rico::Position pos(i, j);
 				rico::Color color(Random::rangeUint(0, 255), Random::rangeUint(0, 255), Random::rangeUint(0, 255));
 				SetPixel(pos, color);
 			}

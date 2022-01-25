@@ -18,8 +18,8 @@
  * OnUserDestroy: called once, for cleanup
  *
  * Game contains several protected functions (Width, Height, SetPixel,
- * GetMousePos, GetButton, WaitMs, Clear), along with basic types (Color,
- * Button, HardwareButton) to work with (see documentation below).
+ * GetPixel, GetMousePos, GetButton, WaitMs, Clear), along with basic types
+ * (Color, Button, HardwareButton) to work with (see documentation below).
  * Feel free to use them to unleash your creativity!
  * To further help the user, the containers Tvec2D and Tmat2D are defined.
  * An external random number generator is also available (see random.hpp).
@@ -65,9 +65,9 @@ namespace rico {
 	template<typename T>
 	struct Tvec2D {
 		T x, y;
-		Tvec2D(T _x, T _y) : x(_x), y(_y) {}
-		Tvec2D(void) : Tvec2D(0, 0) {}
-		Tvec2D(Tvec2D const&) = default;
+		constexpr Tvec2D(T _x, T _y) : x(_x), y(_y) {}
+		constexpr Tvec2D(void) : Tvec2D(static_cast<T>(0), static_cast<T>(0)) {}
+		constexpr Tvec2D(Tvec2D const&) = default;
 		Tvec2D& operator=(Tvec2D const&) = default;
 		Tvec2D& operator+=(Tvec2D const& rhs) { this->x += rhs.x; this->y += rhs.y; return *this; }
 		Tvec2D& operator-=(Tvec2D const& rhs) { this->x -= rhs.x; this->y -= rhs.y; return *this; }
@@ -84,7 +84,7 @@ namespace rico {
 	/**
 	 * to hold coordinates
 	 */
-	using position = Tvec2D<uint32_t>;
+	using Position = Tvec2D<uint32_t>;
 
 	/**
 	 * template for 2D matrix
@@ -167,7 +167,7 @@ namespace rico {
 			return Row(data + cols * index, cols);
 		}
 
-		T& operator[](position pos) { // to allow the syntax 'matrix[position(i, j)]'
+		T& operator[](Position pos) { // to allow the syntax 'matrix[Position(i, j)]'
 			return (*this)[pos.y][pos.x]; // in a (x, y) position, x refer to the column and y to the row
 		}
 
@@ -187,6 +187,12 @@ namespace rico {
 		Color(void)
 			: Color(0, 0, 0)
 		{}
+
+		Color(uint32_t rgba) {
+			rgba >>= 8; b = rgba % 256;
+			rgba >>= 8; g = rgba % 256;
+			rgba >>= 8; r = rgba % 256;
+		}
 
 		operator uint32_t(void) const {
 			// use the RGBA8888 format
@@ -463,7 +469,7 @@ namespace rico {
 		 * @param pos position of the pixel
 		 * @param color color of the pixel
 		 */
-		static void SetPixel(position pos, Color color) {
+		static void SetPixel(Position pos, Color color) {
 			GameEngine& engine = Get();
 			if (engine.init) {
 				engine.data[pos] = uint32_t(color);
@@ -471,11 +477,24 @@ namespace rico {
 		}
 
 		/**
+		 * get the color of a specific pixel if constructed
+		 * @param pos position of the pixel
+		 * @param[out] if not NULL, color color of the pixel
+		 * @return true on success, false otherwise
+		 */
+		static bool GetPixel(Position pos, Color *output) {
+			GameEngine& engine = Get();
+			if (!engine.init || output == NULL) return false;
+			*output = engine.data[pos];
+			return true;
+		}
+
+		/**
 		 * query mouse position
 		 * @param[out] output if not NULL, position of the pixel under mouse
 		 * @return true if the mouse is above the window, false otherwise
 		 */
-		static bool GetMousePos(position *output) {
+		static bool GetMousePos(Position *output) {
 			GameEngine& engine = Get();
 			if (!engine.init) return false;
 			int32_t window_x, window_y;
@@ -565,8 +584,9 @@ namespace rico {
 		// useful shortcuts for the user, see GameEngine for documentation
 		uint32_t Width(void) const { return GameEngine::GetWidth(); }
 		uint32_t Height(void) const { return GameEngine::GetHeight(); }
-		void SetPixel(position pos, Color value) const { GameEngine::SetPixel(pos, value); }
-		bool GetMousePos(position *output) const { return GameEngine::GetMousePos(output); }
+		void SetPixel(Position pos, Color value) const { GameEngine::SetPixel(pos, value); }
+		bool GetPixel(Position pos, Color *output) const { return GameEngine::GetPixel(pos, output); }
+		bool GetMousePos(Position *output) const { return GameEngine::GetMousePos(output); }
 		HardwareButton GetButton(Button button) const { return GameEngine::GetButton(button); }
 		void WaitMs(uint32_t ms) const { GameEngine::WaitMs(ms); }
 
@@ -575,9 +595,9 @@ namespace rico {
 		 * @param color color used to fill
 		 */
 		void Clear(Color color) const {
-			for (uint32_t col = 0; col < Height(); ++col) {
-				for (uint32_t row = 0; row < Width(); ++row) {
-					SetPixel(position(row, col), color);
+			for (uint32_t row = 0; row < Height(); ++row) {
+				for (uint32_t col = 0; col < Width(); ++col) {
+					SetPixel(Position(col, row), color);
 				}
 			}
 		}
