@@ -3,8 +3,8 @@ CPPFLAGS = -Wall -Wextra -Werror -fmax-errors=1
 default:
 	@echo "usage: make [demo|life|gravity]"
 
-%: %.cpp rico.hpp random.hpp
-	g++ $(CPPFLAGS) -o $@ $< -lSDL2
+%: examples/%.cpp $(wildcard src/*.hpp)
+	g++ $(CPPFLAGS) -I src -o $@ $< -lSDL2
 
 clean:
-	find ./* -executable -exec rm {} \;
+	find ./* -executable -type f -exec rm {} \;
