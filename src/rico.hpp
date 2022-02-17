@@ -30,8 +30,9 @@
  * GameEngine::Run<app> run the application (inheriting from Game)
  *
  * see examples:
- * rico/demo.cpp = repeatedly change pixels color at random
- * rico/life.cpp = Conway's Game Of Life
+ * rico/examples/demo.cpp = repeatedly change pixels color at random
+ * rico/examples/life.cpp = Conway's Game Of Life
+ * rico/examples/gravity.cpp = n-bodies simulation
  *
  * Compiling on Linux
  * ~~~~~~~~~~~~~~~~~~
@@ -135,14 +136,15 @@ namespace rico {
 			: Tmat2D(other.rows, other.cols)
 		{
 			for (uint32_t i = 0; i < rows * cols; ++i) {
-				data[i] = other.data[i];
+				new (&data[i]) T(other.data[i]);
 			}
 		}
 
 		Tmat2D& operator=(Tmat2D const& other) {
 			if (this != &other) {
+				Tmat2D tmp(other);
 				this->~Tmat2D();
-				new (this) Tmat2D(other);
+				*this = std::move(tmp);
 			}
 			return *this;
 		}
@@ -154,7 +156,9 @@ namespace rico {
 		}
 
 		Tmat2D& operator=(Tmat2D&& other) noexcept {
-			new (this) Tmat2D(std::move(other));
+			if (this != &other) {
+				new (this) Tmat2D(std::move(other));
+			}
 			return *this;
 		}
 
