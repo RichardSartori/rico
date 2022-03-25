@@ -5,17 +5,19 @@
 class Demo : public rico::Game {
 protected:
 
-	uint32_t ms_count, frames;
+	double ms_count;
+	uint32_t frames_count;
 
 	bool OnUserCreate(int argc, char const **argv) override {
 		(void) argc;
 		(void) argv;
-		ms_count = frames = 0;
+		ms_count = 0.0;
+		frames_count = 0;
 		Clear(rico::WHITE);
 		return true;
 	}
 
-	bool OnUserUpdate(uint32_t elapsed_ms) override {
+	bool OnUserUpdate(double elapsed_ms) override {
 		for (uint32_t i = 0; i < Width(); ++i) {
 			for (uint32_t j = 0; j < Height(); ++j) {
 				rico::Position pos(i, j);
@@ -23,12 +25,12 @@ protected:
 				SetPixel(pos, color);
 			}
 		}
-		++frames;
+		++frames_count;
 		ms_count += elapsed_ms;
-		if (ms_count >= 1000) {
-			std::cout << "FPS=" << frames << std::endl;
-			frames = 0;
-			ms_count -= 1000;
+		if (ms_count >= 1000.0) {
+			std::cout << "FPS=" << frames_count << std::endl;
+			frames_count = 0;
+			ms_count -= 1000.0;
 		}
 		if (GetButton('q').pressed) return false;
 		return true;

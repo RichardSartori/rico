@@ -170,7 +170,7 @@ protected:
 		return true;
 	}
 
-	bool OnUserUpdate(uint32_t elapsed_ms) override {
+	bool OnUserUpdate(double elapsed_ms) override {
 		(void) elapsed_ms;
 		// handle user input
 		if (GetButton('q').pressed) return false;

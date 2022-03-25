@@ -94,7 +94,7 @@ protected:
 		return;
 	}
 
-	bool OnUserUpdate(uint32_t elapsed_ms) override {
+	bool OnUserUpdate(double elapsed_ms) override {
 		(void) elapsed_ms;
 		if (!pause || step) {
 			// update next state based on current state
@@ -126,7 +126,7 @@ protected:
 			if (GetMousePos(&pos)) glider(pos);
 		}
 		// limit the number of updates per second
-		WaitMs(1000 / FPS);
+		WaitMs(1000.0 / FPS);
 		return true;
 	}
 };

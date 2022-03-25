@@ -56,6 +56,8 @@
 #include <stdexcept>
 #include <utility>
 #include <iostream>
+#include <chrono>
+#include <ratio>
 #include <thread>
 
 namespace rico {
@@ -83,9 +85,12 @@ namespace rico {
 	}; // struct Tvec2D
 
 	/**
-	 * to hold coordinates
+	 * define useful types
 	 */
 	using Position = Tvec2D<uint32_t>;
+	using Clock = std::chrono::system_clock;
+	using TimePoint = std::chrono::time_point<Clock>;
+	using Duration = std::chrono::duration<double, std::milli>;
 
 	/**
 	 * template for 2D matrix
@@ -534,11 +539,10 @@ namespace rico {
 		/**
 		 * @param ms minimal idle duration (in milliseconds) if constructed
 		 */
-		static void WaitMs(uint32_t ms) {
+		static void WaitMs(double ms) {
 			GameEngine& engine = Get();
 			if (engine.init) {
-				std::chrono::milliseconds duration(ms);
-				std::this_thread::sleep_for(duration);
+				std::this_thread::sleep_for(Duration(ms));
 			}
 		}
 
@@ -573,7 +577,7 @@ namespace rico {
 		 * @param elapsed_ms duration of the previous frame (in milliseconds)
 		 * @return true while game loop should continue, false othewise
 		 */
-		virtual bool OnUserUpdate(uint32_t elapsed_ms) = 0;
+		virtual bool OnUserUpdate(double elapsed_ms) = 0;
 
 		/**
 		 * called once after game loop
@@ -592,7 +596,7 @@ namespace rico {
 		bool GetPixel(Position pos, Color *output) const { return GameEngine::GetPixel(pos, output); }
 		bool GetMousePos(Position *output) const { return GameEngine::GetMousePos(output); }
 		HardwareButton GetButton(Button button) const { return GameEngine::GetButton(button); }
-		void WaitMs(uint32_t ms) const { GameEngine::WaitMs(ms); }
+		void WaitMs(double ms) const { GameEngine::WaitMs(ms); }
 
 		/**
 		 * clear window with the given color
@@ -629,7 +633,8 @@ namespace rico {
 		int retval;
 
 		// initialization
-		uint32_t start_of_last_frame = SDL_GetTicks(), now, elapsed_ms;
+		TimePoint start_of_last_frame = Clock::now(), now;
+		Duration diff;
 		Game *app;
 		try {
 			app = new C();
@@ -648,8 +653,8 @@ namespace rico {
 		while (!end) {
 
 			// timing
-			now = SDL_GetTicks();
-			elapsed_ms = now - start_of_last_frame;
+			now = Clock::now();
+			diff = now - start_of_last_frame;
 			start_of_last_frame = now;
 
 			// user inputs
@@ -684,7 +689,7 @@ namespace rico {
 
 			// update
 			try {
-				end |= !app->OnUserUpdate(elapsed_ms);
+				end |= !app->OnUserUpdate(diff.count());
 			} catch (std::exception const& e) {
 				PrintException(e);
 				status = EXIT_FAILURE;
