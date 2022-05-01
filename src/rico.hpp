@@ -107,8 +107,8 @@ namespace rico {
 			T* data;
 			uint32_t length;
 
-			Row(T* _data, uint32_t _length) :
-				data(_data), length(_length)
+			Row(T* _data, uint32_t _length)
+				: data(_data), length(_length)
 			{}
 
 			T& operator[](uint32_t index) {
