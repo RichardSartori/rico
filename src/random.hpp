@@ -4,7 +4,7 @@
  *
  * This RNG use a linear congruential generator
  * modulus    m = 2^64
- * multiplier a = m / 15
+ * multiplier a = (m-1) / 15
  * increment  c = 1
  * this ensure a period of 2^64 for the state, regardless of the seed
  * low bits have a shorter period, so it only output the 32 highest bits
@@ -121,7 +121,7 @@ private:
 
 	/* modify the state of the RNG and return it */
 	uint64_t update(void) {
-		state *= static_cast<uint64_t>(0x1111111111111111); // 2^64 / 15
+		state *= static_cast<uint64_t>(0x1111111111111111); // (2^64-1)/15
 		++state;
 		return state;
 	}
