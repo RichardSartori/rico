@@ -64,7 +64,7 @@ struct Body {
 		// proportionality constant (gravity formula)
 		double C = (G * this->mass * other.mass) / (d*d);
 		// force is equivalent to Cu (where u is the unit vector of AB)
-		return (AB / d) * C;
+		return C * (AB / d);
 	}
 
 	// apply the force for the given duration

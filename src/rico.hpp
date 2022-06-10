@@ -84,6 +84,9 @@ namespace rico {
 		bool operator!=(Tvec2D const& rhs) const { return !(*this == rhs); }
 	}; // struct Tvec2D
 
+	// to allow syntax 'T * Tvec2D'
+	template<typename T> Tvec2D<T> operator*(T const& rhs, Tvec2D<T> const& lhs) { return lhs * rhs; }
+
 	/**
 	 * define useful types
 	 */
@@ -102,7 +105,8 @@ namespace rico {
 		uint32_t rows, cols; // dimensions
 		T* data; // underlying data array
 
-		struct Row { // to allow the syntax 'matrix[i][j]'
+		// to allow the syntax 'matrix[i][j]'
+		struct Row {
 
 			T* data;
 			uint32_t length;
@@ -176,7 +180,8 @@ namespace rico {
 			return Row(data + cols * index, cols);
 		}
 
-		T& operator[](Position pos) { // to allow the syntax 'matrix[Position(i, j)]'
+		// to allow the syntax 'matrix[Position(i, j)]'
+		T& operator[](Position pos) {
 			return (*this)[pos.y][pos.x]; // in a (x, y) position, x refer to the column and y to the row
 		}
 
