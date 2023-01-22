@@ -9,4 +9,4 @@ all: demo life gravity
 	g++ $(CPPFLAGS) -I src -o $@ $< -lSDL2
 
 clean:
-	find -executable -type f -exec rm {} \;
+	find -executable -type f -delete

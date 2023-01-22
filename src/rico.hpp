@@ -4,7 +4,7 @@
  * ~~~~~~~~~~~~~
  * This is a small attempt to recreate the marvelous OneLoneCoder's
  * PixelGameEngine using the SDL2 library, but in facts it more
- * closely ressemble the ConsoleGameEngine, without the console part
+ * closely ressemble the ConsoleGameEngine, without the console part.
  * RICO stands for Rico Is Clearly OlcConsoleGameEngine
  *
  * Usage
@@ -59,6 +59,7 @@
 #include <chrono>
 #include <ratio>
 #include <thread>
+#include <cmath>
 
 namespace rico {
 
@@ -82,10 +83,13 @@ namespace rico {
 		Tvec2D  operator/ (T      const& rhs) const { Tvec2D copy(*this); copy /= rhs; return copy; }
 		bool operator==(Tvec2D const& rhs) const { return this->x == rhs.x && this->y == rhs.y; }
 		bool operator!=(Tvec2D const& rhs) const { return !(*this == rhs); }
+		template<typename U>
+		operator Tvec2D<U>(void) const { return Tvec2D<U>(U(x), U(y)); }
 	}; // struct Tvec2D
 
-	// to allow syntax 'T * Tvec2D'
-	template<typename T> Tvec2D<T> operator*(T const& rhs, Tvec2D<T> const& lhs) { return lhs * rhs; }
+	// to allow syntax 'T * Tvec2D<T>'
+	template<typename T>
+	Tvec2D<T> operator*(T const& rhs, Tvec2D<T> const& lhs) { return lhs * rhs; }
 
 	/**
 	 * define useful types
@@ -732,5 +736,99 @@ namespace rico {
 
 		return status;
 	}
+
+	/**
+	 * abstract class to represent shapes
+	 */
+	struct Shape {
+
+		Color outline, fill;
+
+		Shape(Color _outline, Color _fill)
+			: outline(_outline), fill(_fill)
+		{}
+
+		Shape(void) = default;
+
+		virtual void Draw(void) const = 0;
+		virtual void Fill(void) const = 0;
+
+	}; // struct Shape
+
+	/**
+	 * generic lerp function
+	 */
+	template<typename T>
+	T lerp(T start, T stop, double t) {
+		return start + (stop - start) * t;
+	}
+
+	struct Line : public Shape {
+
+		Position start, stop;
+
+		Line(void) = default;
+
+		Line(Position _start, Position _stop, Color color)
+			: Shape(color, color), start(_start), stop(_stop)
+		{}
+
+		void Draw(void) const override {
+			using floatPos = rico::Tvec2D<float>;
+			uint32_t dx = (start.x > stop.x) ? (start.x - stop.x) : (stop.x - start.x);
+			uint32_t dy = (start.y > stop.y) ? (start.y - stop.y) : (stop.y - start.y);
+			uint32_t n = std::max(dx, dy);
+			floatPos fstart = floatPos(start);
+			floatPos fstop = floatPos(stop);
+			for (uint32_t i = 0; i <= n; ++i) {
+				double t = ((double) i) / ((double) n);
+				floatPos pos = lerp<floatPos>(fstart, fstop, t);
+				GameEngine::SetPixel(Position(pos), outline);
+			}
+		}
+
+		void Fill(void) const override {
+			return;
+		}
+
+	}; // struct Line
+
+	struct Rectangle : public Shape {
+
+		Position top_left, bottom_right;
+
+		Rectangle(Position corner, Position opposite_corner, Color outline, Color fill)
+			: Shape(outline, fill)
+		{
+			top_left = Position(
+				std::min(corner.x, opposite_corner.x),
+				std::min(corner.y, opposite_corner.y));
+			bottom_right = Position(
+				std::max(corner.x, opposite_corner.x),
+				std::max(corner.y, opposite_corner.y));
+		}
+
+		Rectangle(void) = default;
+
+		void Draw(void) const override {
+			for (uint32_t x = top_left.x; x < bottom_right.x; ++x) {
+				GameEngine::SetPixel(Position(x, top_left.y), outline);
+				GameEngine::SetPixel(Position(x, bottom_right.y), outline);
+			}
+			for (uint32_t y = top_left.y; y < bottom_right.y; ++y) {
+				GameEngine::SetPixel(Position(top_left.x, y), outline);
+				GameEngine::SetPixel(Position(bottom_right.x, y), outline);
+			}
+		}
+
+		void Fill(void) const override {
+			for (uint32_t x = top_left.x+1; x < bottom_right.x-1; ++x) {
+				for (uint32_t y = top_left.y+1; y < bottom_right.y-1; ++y) {
+					GameEngine::SetPixel(Position(x, y), fill);
+				}
+			}
+		}
+
+	}; // struct Rectangle
 
 } // namespace rico

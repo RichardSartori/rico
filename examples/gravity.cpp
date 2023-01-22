@@ -50,9 +50,7 @@ struct Body {
 	double distance(Body const& other) const {
 		double delta_x = this->position.x - other.position.x;
 		double delta_y = this->position.y - other.position.y;
-		double d = std::hypot(delta_x, delta_y);
-		// do not return 0.0
-		return std::max(d, 5e-2);
+		return std::hypot(delta_x, delta_y);
 	}
 
 	// gravitational force that other apply to *this
@@ -60,7 +58,7 @@ struct Body {
 		// direction of the force
 		vec AB = other.position - this->position;
 		// distance (has a minimal value, lead to energy loss in the system)
-		double d = distance(other);
+		double d = std::max(distance(other), 5e-2);
 		// proportionality constant (gravity formula)
 		double C = (G * this->mass * other.mass) / (d*d);
 		// force is equivalent to Cu (where u is the unit vector of AB)
@@ -83,20 +81,18 @@ struct Body {
 		int32_t x = static_cast<int32_t>(((1.0 + position.x) / 2.0) * static_cast<double>(rico::GameEngine::GetWidth()));
 		// map [-1.0, +1.0] to [0, +height]
 		int32_t y = static_cast<int32_t>(((1.0 + position.y) / 2.0) * static_cast<double>(rico::GameEngine::GetHeight()));
-		// for each pixel in the radius
-		for (int32_t col = x - radius; col <= x + radius; ++col) {
-			for (int32_t row = y - radius; row <= y + radius; ++row) {
-				// convert to position
-				if (row < 0 || col < 0) continue;
-				rico::Position pos(static_cast<uint32_t>(col), static_cast<uint32_t>(row));
-				// try to display pixel
-				try {
-					rico::GameEngine::SetPixel(pos, color);
-				} catch (std::out_of_range const&) {
-					// do nothing on error (pixel out of screen)
-				}
-			}
-		}
+		// return if some pixels are out of the screen
+		if (x < radius) return;
+		if (y < radius) return;
+		if (static_cast<uint32_t>(x+radius) >= rico::GameEngine::GetWidth()) return;
+		if (static_cast<uint32_t>(y+radius) >= rico::GameEngine::GetHeight()) return;
+		// create rectangle representing the planet (circle will be done later)
+		rico::Position center(static_cast<uint32_t>(x), static_cast<uint32_t>(y));
+		rico::Position offset(radius, radius);
+		rico::Rectangle rectangle(center-offset, center+offset, color, color);
+		// display the rectangle
+		rectangle.Draw();
+		rectangle.Fill();
 	}
 
 }; // struct Body
