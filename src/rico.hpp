@@ -497,7 +497,7 @@ namespace rico {
 		/**
 		 * get the color of a specific pixel if constructed
 		 * @param pos position of the pixel
-		 * @param[out] if not NULL, color color of the pixel
+		 * @param[out] output if not NULL, color color of the pixel
 		 * @return true on success, false otherwise
 		 */
 		static bool GetPixel(Position pos, Color *output) {
